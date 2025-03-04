@@ -269,9 +269,15 @@ class PassengerController extends Controller
                 ->with(['driver'])
                 ->findOrFail($id);
 
-            if (!$request->canBeConfirmed()) {
+            if (!$request->isAccepted()) {
                 return response()->json([
                     'error' => 'Cette demande ne peut pas être confirmée'
+                ], 422);
+            }
+
+            if ($request->passenger_confirmation_at) {
+                return response()->json([
+                    'error' => 'Cette demande a déjà été confirmée'
                 ], 422);
             }
 
@@ -282,9 +288,7 @@ class PassengerController extends Controller
                     'passenger_confirmation_at' => now()
                 ]);
 
-                if ($request->driver) {
-                    Notification::send($request->driver, new RideConfirmedNotification($request));
-                }
+                Notification::send($request->driver, new RideConfirmedNotification($request));
 
                 DB::commit();
 
@@ -306,40 +310,47 @@ class PassengerController extends Controller
 
     public function deleteRideRequest($id)
     {
-        DB::beginTransaction();
-
         try {
-            // Récupérer la demande avec les relations nécessaires
             $request = RideRequest::where('passenger_id', auth()->id())
-                ->with(['driver', 'passenger'])
+                ->with(['driver'])
                 ->findOrFail($id);
 
-            // Envoyer la notification au chauffeur avant la suppression
-            if ($request->driver) {
-                try {
-                    Notification::send($request->driver, new RideDeletedNotification($request));
-                } catch (\Exception $e) {
-                    Log::error('Erreur lors de l\'envoi de la notification: ' . $e->getMessage());
-                    // On continue même si la notification échoue
-                }
+            if (!$request->getCanBeDeletedAttribute()) {
+                return response()->json([
+                    'error' => 'Cette réservation ne peut pas être supprimée'
+                ], 422);
             }
 
-            // Supprimer la demande
-            $request->delete();
+            DB::beginTransaction();
 
-            DB::commit();
+            try {
+                // D'abord annuler la réservation
+                $request->update([
+                    'status' => 'cancelled',
+                    'passenger_confirmation_at' => now()
+                ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Réservation supprimée avec succès'
-            ]);
+                // Notifier le chauffeur
+                if ($request->driver) {
+                    Notification::send($request->driver, new RideDeletedNotification($request));
+                }
 
+                // Supprimer la réservation
+                $request->delete();
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Réservation supprimée avec succès'
+                ]);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Erreur lors de la suppression de la réservation: ' . $e->getMessage());
-
+            Log::error('Erreur lors de la suppression: ' . $e->getMessage());
             return response()->json([
-                'success' => false,
                 'error' => 'Erreur lors de la suppression de la réservation'
             ], 500);
         }
