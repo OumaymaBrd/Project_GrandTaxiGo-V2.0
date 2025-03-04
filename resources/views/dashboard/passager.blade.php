@@ -666,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            const response = await fetch('{{ route("ride.request") }}', {
+            const response = await fetch('/passenger/ride-request', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -894,7 +894,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Réservation confirmée avec succès !');
             showMyRequests(); // Rafraîchir la liste
         } catch (error) {
-            alert(error.message);
+                        alert(error.message);
         }
     }
 
