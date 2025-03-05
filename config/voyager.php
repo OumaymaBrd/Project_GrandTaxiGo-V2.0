@@ -10,12 +10,19 @@ return [
     |
     */
 
-    'user' => [
-        'add_default_role_on_register' => true,
-        'default_role'                 => 'user',
-        'default_avatar'               => 'users/default.png',
-        'redirect'                     => '/admin',
-    ],
+  // Dans la section 'user', ajoutez la ligne 'namespace'
+
+
+
+'user' => [
+    'add_default_role_on_register' => true,
+    'default_role'                 => 'user',
+    'namespace'                    => App\Models\User::class,
+    'default_avatar'               => 'users/default.png',
+    'redirect'                     => '/admin',
+],
+
+// Dans la section 'models', décommentez et modifiez selon l'emplacement de vos modèles
 
     /*
     |--------------------------------------------------------------------------
@@ -41,8 +48,9 @@ return [
     |
     */
 
+
     'models' => [
-       // 'namespace' => 'App\\Models\\',
+       'namespace' => 'App\\Models\\',
     ],
 
     /*
