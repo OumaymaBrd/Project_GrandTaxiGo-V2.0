@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class User extends \TCG\Voyager\Models\User
 {
     use Notifiable;
-
+//
     protected $fillable = [
         'name',
+        // 
         'email',
         'password',
         'role',
