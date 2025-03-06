@@ -10,11 +10,15 @@ use App\Http\Controllers\DriverNotificationController;
 use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\FirebaseAuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdminAuthController;
+
+
 
 // Routes publiques
 Route::get('/', function () {
   return view('welcome');
 });
+
 
 // Routes d'authentification
 Route::middleware('guest')->group(function () {
@@ -98,7 +102,36 @@ Route::middleware('auth')->group(function () {
 });
 
 
+// Routes d'administration avec le préfixe admin-panel
+// Routes d'authentification admin personnalisées
+
+// Routes Voyager avec authentification
+// Route::group(['prefix' => 'admin-panel'], function () {
+//     Voyager::routes();
+// });
+// Route::group(['prefix' => 'admin-panel'], function () {
+//     Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
+//     Route::post('login', [AdminAuthController::class, 'login'])->name('admin.postlogin');
+//     Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+
+//     // Routes protégées par le middleware admin
+//     Route::group(['middleware' => 'admin.user'], function () {
+//         // Voyager::routes() sera appelé ici
+//     });
+// });
+
+// // Routes Voyager (avec le préfixe admin-panel défini dans config/voyager.php)
+// Route::group(['prefix' => 'admin-panel', 'middleware' => 'admin.user'], function () {
+//     Voyager::routes();
+// });
+
+// Routes Voyager avec authentification
 
 Route::group(['prefix' => 'admin'], function () {
-    Voyager::routes();
+    Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('voyager.login');
+    Route::post('login', [AdminAuthController::class, 'login'])->name('voyager.postlogin');
+
+    Route::group(['middleware' => 'admin'], function () {
+        Voyager::routes();
+    });
 });

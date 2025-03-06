@@ -10,19 +10,13 @@ return [
     |
     */
 
-  // Dans la section 'user', ajoutez la ligne 'namespace'
-
-
-
-'user' => [
-    'add_default_role_on_register' => true,
-    'default_role'                 => 'user',
-    'namespace'                    => App\Models\User::class,
-    'default_avatar'               => 'users/default.png',
-    'redirect'                     => '/admin',
-],
-
-// Dans la section 'models', décommentez et modifiez selon l'emplacement de vos modèles
+    'user' => [
+        'add_default_role_on_register' => true,
+        'default_role' => 'admin',
+        'namespace' => App\Models\Admin::class,
+        'default_avatar' => 'users/default.png',
+        'redirect' => '/admin'
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -33,8 +27,8 @@ return [
     |
     */
 
-    'controllers' => [
-        'namespace' => 'TCG\\Voyager\\Http\\Controllers',
+   'controllers' => [
+        'namespace' => 'App\\Http\\Controllers\\Voyager\\',
     ],
 
     /*
@@ -48,10 +42,21 @@ return [
     |
     */
 
-
-    'models' => [
-       'namespace' => 'App\\Models\\',
+   'models' => [
+        'namespace' => 'App\\Models\\',
+        'user' => App\Models\Admin::class,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Path to the Voyager Assets
+    |--------------------------------------------------------------------------
+    |
+    | Here you can specify the location of the voyager assets path
+    |
+    */
+
+    'assets_path' => '/vendor/tcg/voyager/assets',
 
     /*
     |--------------------------------------------------------------------------
@@ -112,14 +117,14 @@ return [
         /*
          * Select default language
          */
-        'default' => 'en',
+        'default' => 'fr',
 
         /*
          * Select languages that are supported.
          */
         'locales' => [
+            'fr',
             'en',
-            //'pt',
         ],
     ],
 
@@ -152,9 +157,10 @@ return [
         ],
 
         'widgets' => [
-
+            'TCG\\Voyager\\Widgets\\UserDimmer',
+            'TCG\\Voyager\\Widgets\\PostDimmer',
+            'TCG\\Voyager\\Widgets\\PageDimmer',
         ],
-
     ],
 
     /*
@@ -231,7 +237,6 @@ return [
 
     'media' => [
         // The allowed mimetypes to be uploaded through the media-manager.
-        // 'allowed_mimetypes' => '*', //All types can be uploaded
         'allowed_mimetypes' => [
           'image/jpeg',
           'image/png',
@@ -247,20 +252,22 @@ return [
         'allow_delete'        => true,
         'allow_create_folder' => true,
         'allow_rename'        => true,
-        /*'watermark'           => [
-            'source'         => 'watermark.png',
-            'position'       => 'bottom-left',
-            'x'              => 0,
-            'y'              => 0,
-            'size'           => 15,
-       ],
-       'thumbnails'          => [
-           [
-                'type'  => 'fit',
-                'name'  => 'fit-500',
-                'width' => 500,
-                'height'=> 500
-           ],
-       ]*/
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Routes config
+    |--------------------------------------------------------------------------
+    |
+    | Here you can specify voyager route settings
+    |
+    */
+
+    'prefix' => 'admin-panel',
+
+    'routes' => [
+        'prefix' => 'admin-panel',
+        'namespace' => 'TCG\\Voyager\\Http\\Controllers',
+        'middleware' => ['web'],
     ],
 ];
