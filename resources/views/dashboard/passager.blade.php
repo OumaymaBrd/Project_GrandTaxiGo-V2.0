@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+
 @section('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
@@ -333,6 +334,10 @@
                 <button type="button" class="btn btn-primary" onclick="submitBooking()">
                     <i class="fas fa-check me-2"></i>Confirmer la réservation
                 </button>
+                {{--  Open Channnele  --}}
+                <button type="button" class="btn btn-primary" onclick="submitBooking()">
+                    <i class="fas fa-check me-2"></i>Enovoyer un message
+                </button>
             </div>
         </div>
     </div>
@@ -450,7 +455,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     class="btn btn-primary btn-sm w-100">
                     <i class="fas fa-car me-1"></i>Réserver
                 </button>
+
             </div>
+
+
         `;
     }
 
@@ -488,8 +496,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="driver-footer">
                     <div class="text-muted small">
                         <i class="far fa-clock me-1"></i>
-                        Disponible depuis ${new Date(announcement.created_at).toLocaleString()}
+                        Disponible depuis  ${new Date(announcement.created_at).toLocaleString()}
                     </div>
+
+
                     <button onclick="showBooking(${JSON.stringify(announcement).replace(/"/g, '&quot;')})"
                         class="btn btn-primary">
                         <i class="fas fa-car me-2"></i>Réserver
@@ -1096,4 +1106,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+
+
+
+@yield('content2')
 

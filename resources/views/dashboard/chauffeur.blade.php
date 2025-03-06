@@ -475,6 +475,8 @@
                             data-bs-target="#reservations" type="button" role="tab">
                             <i class="fas fa-calendar me-2"></i>Réservations
                         </button>
+
+                        
                     </li>
                 </ul>
 
