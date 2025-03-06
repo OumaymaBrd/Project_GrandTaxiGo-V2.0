@@ -7,12 +7,12 @@ use App\Http\Controllers\DriverAnnouncementController;
 use App\Http\Controllers\PassengerController;
 use App\Http\Controllers\DriverRideController;
 use App\Http\Controllers\DriverNotificationController;
-use App\Http\Controllers\SocialiteController;
-use App\Http\Controllers\FirebaseAuthController;
+// use App\Http\Controllers\SocialiteController;
+// use App\Http\Controllers\FirebaseAuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminAuthController;
-
-
+use TCG\Voyager\Http\Controllers\VoyagerUserController;
 
 // Routes publiques
 Route::get('/', function () {
@@ -29,18 +29,18 @@ Route::middleware('guest')->group(function () {
   Route::post('/register', [RegisterController::class, 'register']);
 
   // Routes d'authentification Google
-  Route::get('/auth/google', [SocialiteController::class, 'googleLogin'])->name('auth.google');
-  Route::get('/auth/google-callback', [SocialiteController::class, 'googleAuthentication'])->name('auth.google-callback');
+//   Route::get('/auth/google', [SocialiteController::class, 'googleLogin'])->name('auth.google');
+//   Route::get('/auth/google-callback', [SocialiteController::class, 'googleAuthentication'])->name('auth.google-callback');
 
   // Route pour Firebase Authentication
-  Route::post('/auth/firebase-callback', [FirebaseAuthController::class, 'handleCallback'])->name('auth.firebase-callback');
+//   Route::post('/auth/firebase-callback', [FirebaseAuthController::class, 'handleCallback'])->name('auth.firebase-callback');
 });
 
 // Route pour choisir un rôle (accessible uniquement si authentifié mais sans rôle défini)
-Route::middleware('auth')->group(function () {
-  Route::get('/choose-role', [SocialiteController::class, 'showChooseRoleForm'])->name('choose.role');
-  Route::post('/choose-role', [SocialiteController::class, 'updateRole'])->name('update.role');
-});
+// Route::middleware('auth')->group(function () {
+//   Route::get('/choose-role', [SocialiteController::class, 'showChooseRoleForm'])->name('choose.role');
+//   Route::post('/choose-role', [SocialiteController::class, 'updateRole'])->name('update.role');
+// });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -127,11 +127,14 @@ Route::middleware('auth')->group(function () {
 
 // Routes Voyager avec authentification
 
-Route::group(['prefix' => 'admin'], function () {
-    Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('voyager.login');
-    Route::post('login', [AdminAuthController::class, 'login'])->name('voyager.postlogin');
+// Route::group(['prefix' => 'admin'], function () {
+//     Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('voyager.login');
+//     Route::post('login', [AdminAuthController::class, 'login'])->name('voyager.postlogin');
 
-    Route::group(['middleware' => 'admin'], function () {
-        Voyager::routes();
-    });
-});
+//     Route::group(['middleware' => 'admin'], function () {
+//         Voyager::routes();
+//     });
+// });
+
+
+// Route::resource('chat', ChatController::class);
