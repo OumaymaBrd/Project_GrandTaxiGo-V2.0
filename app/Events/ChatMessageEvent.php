@@ -1,45 +1,30 @@
 <?php
 
-namespace App\Events;
+namespace App\Http\Controllers;
 
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+use App\Events\ChatMessageEvent;
+use Illuminate\Http\Request;
 
-class ChatMessageEvent implements ShouldBroadcast
+class ChatController extends Controller
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    /**
-     * Create a new event instance.
-     */
-
-     public $nickname;
-     public $message;
-    public function __construct(string $nickname,string $message)
-    {
-        $this->nickname=$nickname;
-        $this->message=$message;
-
+    public function index(){
+        return view('chat.index');
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
-    {
-        return [
-            new Channel('chat'),
-        ];
-    }
+    public function store(Request $request){
+        // Validate the request
+        $validated = $request->validate([
+            'nickname' => 'required|string|max:50',
+            'message' => 'required|string|max:500',
+        ]);
 
-    public function broadcastAs(){
-        return 'chat-message';
+        // Broadcast the chat message event
+        event(new ChatMessageEvent($request->nickname, $request->message));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Message envoyé avec succès',
+        ]);
     }
 }
+

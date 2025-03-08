@@ -127,5 +127,9 @@ class RideRequest extends Model
     {
         return $this->passenger_confirmation_at !== null;
     }
+    public function rating()
+{
+    return $this->hasOne(Rating::class, 'ride_id');
+}
 }
 

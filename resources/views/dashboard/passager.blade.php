@@ -4,7 +4,27 @@
 @section('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-    #map {
+.rating-stars {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.rating-star {
+    cursor: pointer;
+    color: #ccc;
+    transition: color 0.2s;
+}
+
+.rating-star.active, .rating-star:hover {
+    color: #ffc107;
+}
+
+.rating-text {
+    font-weight: 500;
+    min-height: 24px;
+}
+   #map {
         height: 400px;
         width: 100%;
         border-radius: 8px;
@@ -335,9 +355,23 @@
                     <i class="fas fa-check me-2"></i>Confirmer la réservation
                 </button>
                 {{--  Open Channnele  --}}
-                <button type="button" class="btn btn-primary" onclick="submitBooking()">
-                    <i class="fas fa-check me-2"></i>Enovoyer un message
-                </button>
+                -<div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="submitBooking()">
+                        <i class="fas fa-check me-2"></i>Confirmer la reservation
+                    </button>
+
+
+                    {{-- This button will only be shown for existing rides --}}
+                    @if(isset($ride) && $ride->id)
+                    <a href="{{ route('chat.ride', ['rideId' => $ride->id]) }}" class="btn btn-info">
+                        <i class="fas fa-comment me-2"></i>Envoyer un message
+                    </a>
+                    @endif
+
+                    {{-- @if(isset($)) --}}
+                </div>
+
             </div>
         </div>
     </div>
@@ -364,6 +398,171 @@
 @section('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // Système de notation
+document.addEventListener('DOMContentLoaded', function() {
+    const ratingStars = document.querySelectorAll('.rating-star');
+    const ratingText = document.getElementById('ratingText');
+    const ratingValue = document.getElementById('ratingValue');
+    const submitRating = document.getElementById('submitRating');
+    const ratingModal = new bootstrap.Modal(document.getElementById('ratingModal'));
+
+    // Textes correspondant aux notes
+    const ratingLabels = {
+        1: 'Très mauvais',
+        2: 'Mauvais',
+        3: 'Correct',
+        4: 'Bon',
+        5: 'Excellent'
+    };
+
+    // Gérer le survol et la sélection des étoiles
+    ratingStars.forEach(star => {
+        // Survol
+        star.addEventListener('mouseenter', () => {
+            const rating = parseInt(star.dataset.rating);
+            updateStars(rating, false);
+            ratingText.textContent = ratingLabels[rating];
+        });
+
+        // Sortie du survol
+        star.addEventListener('mouseleave', () => {
+            const currentRating = parseInt(ratingValue.value);
+            updateStars(currentRating, false);
+            ratingText.textContent = currentRating > 0 ? ratingLabels[currentRating] : 'Sélectionnez une note';
+        });
+
+        // Clic
+        star.addEventListener('click', () => {
+            const rating = parseInt(star.dataset.rating);
+            ratingValue.value = rating;
+            updateStars(rating, true);
+            ratingText.textContent = ratingLabels[rating];
+            submitRating.disabled = false;
+        });
+    });
+
+    // Mettre à jour l'affichage des étoiles
+    function updateStars(rating, permanent = false) {
+        ratingStars.forEach(star => {
+            const starRating = parseInt(star.dataset.rating);
+
+            if (permanent) {
+                // Pour une sélection permanente
+                if (starRating <= rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas', 'active');
+                } else {
+                    star.classList.remove('fas', 'active');
+                    star.classList.add('far');
+                }
+            } else {
+                // Pour le survol temporaire
+                if (starRating <= rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas');
+                } else {
+                    star.classList.remove('fas');
+                    star.classList.add('far');
+
+                    // Conserver les étoiles sélectionnées
+                    const selectedRating = parseInt(ratingValue.value);
+                    if (selectedRating > 0 && starRating <= selectedRating) {
+                        star.classList.remove('far');
+                        star.classList.add('fas', 'active');
+                    }
+                }
+            }
+        });
+    }
+
+    // Soumettre la notation
+    submitRating.addEventListener('click', async function() {
+        const rating = parseInt(ratingValue.value);
+        const comment = document.getElementById('ratingComment').value;
+        const rideId = document.getElementById('ratingRideId').value;
+
+        if (rating < 1 || rating > 5) return;
+
+        // Désactiver le bouton pendant la soumission
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Envoi en cours...';
+
+        try {
+            const response = await fetch('/passenger/submit-rating', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    ride_id: rideId,
+                    rating: rating,
+                    comment: comment
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Erreur lors de la soumission de la notation');
+            }
+
+            // Fermer le modal et réinitialiser
+            ratingModal.hide();
+            resetRatingModal();
+
+            // Afficher un message de succès
+            alert('Merci pour votre évaluation !');
+
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            // Réactiver le bouton
+            this.disabled = false;
+            this.innerHTML = 'Soumettre l\'évaluation';
+        }
+    });
+
+    // Réinitialiser le modal
+    function resetRatingModal() {
+        ratingValue.value = 0;
+        document.getElementById('ratingComment').value = '';
+        document.getElementById('ratingRideId').value = '';
+        ratingText.textContent = 'Sélectionnez une note';
+        submitRating.disabled = true;
+
+        // Réinitialiser les étoiles
+        ratingStars.forEach(star => {
+            star.classList.remove('fas', 'active');
+            star.classList.add('far');
+        });
+    }
+
+    // Vérifier périodiquement s'il y a des courses terminées à évaluer
+    function checkForCompletedRides() {
+        fetch('/passenger/check-completed-rides')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.ride) {
+                    // Préparer et afficher le modal de notation
+                    document.getElementById('ratingDriverName').textContent = data.ride.driver_name;
+                    document.getElementById('ratingDriverImage').src = data.ride.driver_image || '/images/default-avatar.png';
+                    document.getElementById('ratingRideId').value = data.ride.id;
+
+                    // Afficher le modal
+                    ratingModal.show();
+                }
+            })
+            .catch(error => console.error('Erreur lors de la vérification des courses terminées:', error));
+    }
+
+    // Vérifier immédiatement au chargement de la page
+    checkForCompletedRides();
+
+    // Puis vérifier toutes les 30 secondes
+    setInterval(checkForCompletedRides, 30000);
+});
 document.addEventListener('DOMContentLoaded', function() {
     // Variables globales
     let map = null;
@@ -1111,3 +1310,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
 @yield('content2')
 
+
+<!-- Modal de notation -->
+<div class="modal fade" id="ratingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Évaluer votre course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <img id="ratingDriverImage" src="/images/default-avatar.png" alt="Photo du chauffeur"
+                         class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    <h5 id="ratingDriverName">Nom du chauffeur</h5>
+                </div>
+
+                <div class="text-center mb-4">
+                    <p>Comment s'est passé votre trajet ?</p>
+                    <div class="rating-stars">
+                        <i class="far fa-star fa-2x rating-star" data-rating="1"></i>
+                        <i class="far fa-star fa-2x rating-star" data-rating="2"></i>
+                        <i class="far fa-star fa-2x rating-star" data-rating="3"></i>
+                        <i class="far fa-star fa-2x rating-star" data-rating="4"></i>
+                        <i class="far fa-star fa-2x rating-star" data-rating="5"></i>
+                    </div>
+                    <div class="rating-text mt-2" id="ratingText">Sélectionnez une note</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="ratingComment" class="form-label">Commentaire (optionnel)</label>
+                    <textarea id="ratingComment" class="form-control" rows="3"
+                              placeholder="Partagez votre expérience..."></textarea>
+                </div>
+
+                <input type="hidden" id="ratingRideId" value="">
+                <input type="hidden" id="ratingValue" value="0">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Plus tard</button>
+                <button type="button" class="btn btn-primary" id="submitRating" disabled>
+                    Soumettre l'évaluation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

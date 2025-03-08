@@ -12,12 +12,70 @@ use App\Http\Controllers\DriverNotificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\AdminAuthController;
+use App\Mail\HelloMail;
 use TCG\Voyager\Http\Controllers\VoyagerUserController;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\SmsController;
+// use App\Http\Controllers\Driver\RideCompletionController;
 
-// Routes publiques
-Route::get('/', function () {
-  return view('welcome');
+// Ancien code (incorrect)
+// use App\Http\Controllers\RideCompletionController;
+use App\Http\Controllers\RatingController;
+
+// Route pour marquer une course comme terminée
+Route::post('/driver/ride-request/{id}/complete', [App\Http\Controllers\Driver\RideCompletionController::class, 'complete'])
+    ->name('driver.ride.complete')
+    ->middleware('auth');
+
+
+// Dans routes/web.php
+Route::post('/driver/ride-request/{id}/complete', [App\Http\Controllers\Driver\RideCompletionController::class, 'complete'])
+    ->name('driver.ride.complete')
+    ->middleware(['auth']);
+// Dans routes/web.php
+// Dans routes/web.php
+Route::get('/test-complete-ride/{id}', function ($id, App\Services\InfobipService $infobipService) {
+    try {
+        $phoneNumber = '0701237397';
+
+        // Simuler la logique du contrôleur
+        $ride = App\Models\RideRequest::findOrFail($id);
+        $ride->status = 'completed';
+        $ride->save();
+
+        // Envoyer le SMS
+        $message = "Test: Une course a été marquée comme terminée. ID: {$id}";
+        $result = $infobipService->sendSms($phoneNumber, $message);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Test de complétion réussi et SMS envoyé',
+            'phone_number' => $phoneNumber,
+            'sms_result' => $result
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur: ' . $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
 });
+Route::post('/driver/ride-request/{id}/complete', [RideCompletionController::class, 'complete'])
+    ->name('driver.ride.complete')
+    ->middleware(['auth']);
+
+// Nouveau code (correct)
+use App\Http\Controllers\Driver\RideCompletionController;
+
+Route::post('/driver/ride-request/{id}/complete', [RideCompletionController::class, 'complete'])
+    ->name('driver.ride.complete')
+    ->middleware(['auth']);
+
+Route::post('/sms/delivery-report', function() {
+    Log::info('Rapport de livraison SMS reçu', ['data' => request()->all()]);
+    return response()->json(['success' => true]);
+})->name('sms.delivery-report');
 
 
 // Routes d'authentification
@@ -102,39 +160,48 @@ Route::middleware('auth')->group(function () {
 });
 
 
-// Routes d'administration avec le préfixe admin-panel
-// Routes d'authentification admin personnalisées
+// Chat routes
+Route::get('/chat', [ChatController::class, 'index']);
+Route::post('/chat', [ChatController::class, 'store']);
 
-// Routes Voyager avec authentification
-// Route::group(['prefix' => 'admin-panel'], function () {
-//     Voyager::routes();
-// });
-// Route::group(['prefix' => 'admin-panel'], function () {
-//     Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
-//     Route::post('login', [AdminAuthController::class, 'login'])->name('admin.postlogin');
-//     Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
-
-//     // Routes protégées par le middleware admin
-//     Route::group(['middleware' => 'admin.user'], function () {
-//         // Voyager::routes() sera appelé ici
-//     });
-// });
-
-// // Routes Voyager (avec le préfixe admin-panel défini dans config/voyager.php)
-// Route::group(['prefix' => 'admin-panel', 'middleware' => 'admin.user'], function () {
-//     Voyager::routes();
-// });
-
-// Routes Voyager avec authentification
-
-// Route::group(['prefix' => 'admin'], function () {
-//     Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('voyager.login');
-//     Route::post('login', [AdminAuthController::class, 'login'])->name('voyager.postlogin');
-
-//     Route::group(['middleware' => 'admin'], function () {
-//         Voyager::routes();
-//     });
-// });
+// Ride chat route
+Route::get('/chat/ride/{rideId}', [ChatController::class, 'showRideChat'])
+    ->middleware('auth')
+    ->name('chat.ride');
 
 
-// Route::resource('chat', ChatController::class);
+Route::get('/send-email', function() {
+    try {
+        Mail::to('oumaymabramid@gmail.com')->send(new HelloMail());
+        return 'Email has been sent successfully!';
+    } catch (\Exception $e) {
+        return 'Error sending email: ' . $e->getMessage();
+    }
+});
+
+Route::get('/send-email', function() {
+    try {
+        Mail::to('oumaymabramid@gmail.com')->send(new HelloMail());
+        return 'Email has been sent successfully!';
+    } catch (\Exception $e) {
+        return 'Error sending email: ' . $e->getMessage();
+    }
+});
+
+Route::get('/send-email', function() {
+    try {
+        Mail::to('oumaymabramid@gmail.com')->send(new HelloMail());
+        return 'Email has been sent successfully!';
+    } catch (\Exception $e) {
+        return 'Error sending email: ' . $e->getMessage();
+    }
+});
+
+// Routes pour les SMS
+Route::get('/sms', [SmsController::class, 'showForm'])->name('sms.form');
+Route::post('/sms', [SmsController::class, 'sendSms'])->name('sms.send');
+
+// Routes pour le système de notation
+Route::post('/passenger/submit-rating', [RatingController::class, 'store'])->middleware('auth');
+Route::get('/passenger/check-completed-rides', [RatingController::class, 'checkCompletedRides'])->middleware('auth');
+

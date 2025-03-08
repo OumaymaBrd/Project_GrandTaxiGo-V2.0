@@ -6,7 +6,7 @@
         <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Inscription</h2>
 
         <form method="POST" action="{{ route('register') }}" class="space-y-6">
-            @csrf
+            @csrf  {{-- Assurez-vous que cette ligne est présente --}}
 
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-700">Nom complet</label>

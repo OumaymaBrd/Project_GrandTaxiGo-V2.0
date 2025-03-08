@@ -439,6 +439,9 @@
 @endsection
 
 @section('content')
+
+
+
 <div class="container py-4">
     <div class="row">
         <div class="col-12">
@@ -476,7 +479,14 @@
                             <i class="fas fa-calendar me-2"></i>Réservations
                         </button>
 
-                        
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link" id="message" href="http://localhost:3000/">
+                            <i class="fas fa-calendar me-2"></i> Envoyer Message
+                        </a>
+
+
                     </li>
                 </ul>
 
@@ -627,6 +637,7 @@
         </div>
     </div>
 </div>
+
 @endsection
 
 @section('scripts')
@@ -1395,6 +1406,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button onclick="respondToRequest(${ride.id}, 'accepted')"
                                 class="btn btn-success btn-sm">
                                 <i class="fas fa-check me-2"></i>Accepter
+                                <
                             </button>
                         </div>
                     </div>
@@ -1412,32 +1424,210 @@ document.addEventListener('DOMContentLoaded', function() {
         `).join('');
     }
 
-    // Marquer une course comme terminée
-    window.completeRide = async function(id) {
-        if (!confirm('Êtes-vous sûr de vouloir marquer cette course comme terminée ?')) {
-            return;
-        }
 
-        try {
-            const response = await fetch(`/driver/ride-request/${id}/complete`, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            });
+    // Fonction pour marquer une course comme terminée et envoyer un SMS
+// Modifiez cette fonction dans votre fichier JavaScript
 
-            if (!response.ok) {
-                throw new Error('Erreur lors de la mise à jour');
+
+// Vérifier s'il y a des courses terminées à évaluer
+function checkForCompletedRides() {
+    fetch('/passenger/check-completed-rides')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.ride) {
+                console.log("Course terminée trouvée:", data.ride); // Ajoutez ce log pour déboguer
+
+                // Préparer et afficher le modal de notation
+                document.getElementById('ratingDriverName').textContent = data.ride.driver_name;
+                document.getElementById('ratingDriverImage').src = data.ride.driver_image;
+                document.getElementById('ratingRideId').value = data.ride.id;
+
+                // Afficher le modal
+                const ratingModal = new bootstrap.Modal(document.getElementById('ratingModal'));
+                ratingModal.show();
             }
+        })
+        .catch(error => console.error('Erreur lors de la vérification des courses terminées:', error));
+}
 
-            const data = await response.json();
-            showAlert('success', data.message || 'Course marquée comme terminée');
-            loadRides();
-        } catch (error) {
-            showAlert('error', error.message || 'Erreur lors de la mise à jour de la course');
+// Vérifier immédiatement au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser les étoiles et autres fonctionnalités du modal...
+
+    // Vérifier s'il y a des courses à évaluer
+    checkForCompletedRides();
+
+    // Puis vérifier toutes les 10 secondes (plus fréquent pour être plus réactif)
+    setInterval(checkForCompletedRides, 10000);
+});
+
+
+window.completeRide = async function(id) {
+    if (!confirm('Êtes-vous sûr de vouloir marquer cette course comme terminée ?')) {
+        return;
+    }
+
+    try {
+        // Afficher un indicateur de chargement
+        const button = document.querySelector(`button[onclick="completeRide(${id})"]`);
+        const originalButtonText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Traitement en cours...';
+
+        const response = await fetch(`/driver/ride-request/${id}/complete`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+
+        // Restaurer le bouton
+        button.disabled = false;
+        button.innerHTML = originalButtonText;
+
+        // Gérer la réponse
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            throw new Error(responseData.message || 'Erreur lors de la mise à jour');
         }
-    };
+
+        // Afficher le message de succès
+        showAlert('success', 'Course marquée comme terminée');
+
+        // Recharger les réservations après un court délai
+        setTimeout(() => {
+            loadRides();
+        }, 1000);
+
+    } catch (error) {
+        console.error('Erreur complète:', error);
+        showAlert('error', error.message || 'Erreur lors de la mise à jour de la course');
+
+        // Recharger les réservations en cas d'erreur aussi
+        loadRides();
+    }
+};
+// Améliorer la fonction showAlert pour qu'elle soit plus visible
+function showAlert(type, message) {
+    const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+    const icon = type === 'error' ? 'exclamation-circle' : 'check-circle';
+
+    // Créer l'alerte
+    const alert = document.createElement('div');
+    alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-4`;
+    alert.style.zIndex = '9999';
+    alert.innerHTML = `
+        <i class="fas fa-${icon} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Ajouter l'alerte au document
+    document.body.appendChild(alert);
+
+    // Supprimer automatiquement après 5 secondes
+    setTimeout(() => {
+        alert.classList.remove('show');
+        setTimeout(() => alert.remove(), 150);
+    }, 5000);
+}
+
+// Améliorer la fonction loadRides pour montrer un état de chargement
+async function loadRides() {
+    const container = document.getElementById('reservations-list');
+
+    // Afficher l'indicateur de chargement
+    container.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+            <p class="mt-2">Mise à jour des réservations...</p>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/driver/ride-requests');
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Erreur lors du chargement des réservations');
+        }
+
+        allRides = data.requests || [];
+        filterRides(currentFilter);
+    } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                ${error.message}
+                <button type="button" class="btn btn-link text-danger" onclick="loadRides()">
+                    <i class="fas fa-sync-alt me-1"></i>Réessayer
+                </button>
+            </div>
+        `;
+    }
+}
+//     window.completeRide = async function(id) {
+//     if (!confirm('Êtes-vous sûr de vouloir marquer cette course comme terminée ?')) {
+//         return;
+//     }
+
+//     try {
+//         const response = await fetch(`/driver/ride-request/${id}/complete`, {
+//             method: 'POST',
+//             headers: {
+//                 'Accept': 'application/json',
+//                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+//             }
+//         });
+
+//         if (!response.ok) {
+//             throw new Error('Erreur lors de la mise à jour');
+//         }
+
+//         const data = await response.json();
+//         showAlert('success', data.message || 'Course marquée comme terminée');
+//         loadRides();
+//     } catch (error) {
+//         showAlert('error', error.message || 'Erreur lors de la mise à jour de la course');
+//     }
+// };
+
+
+
+
+
+   // Marquer une course comme terminée
+    //  window.completeRide = async function(id) {
+    //     if (!confirm('Êtes-vous sûr de vouloir marquer cette course comme terminée ?')) {
+    //         return;
+    //     }
+
+    //     try {
+    //         const response = await fetch(`/driver/ride-request/${id}/complete`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Accept': 'application/json',
+    //                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    //             }
+    //         });
+
+    //         if (!response.ok) {
+    //             throw new Error('Erreur lors de la mise à jour');
+    //         }
+
+    //         const data = await response.json();
+    //         showAlert('success', data.message || 'Course marquée comme terminée');
+    //         loadRides();
+    //     } catch (error) {
+    //         showAlert('error', error.message || 'Erreur lors de la mise à jour de la course');
+    //     }
+    // };
 
     // Fonctions utilitaires
     function getNotificationIcon(type) {
@@ -1535,4 +1725,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endsection
+<!-- Ajouter ce bouton quelque part dans votre interface passager -->
+<button id="check-ratings-btn" class="btn btn-sm btn-outline-primary">
+    <i class="fas fa-star me-2"></i>Vérifier les courses à évaluer
+</button>
+
+<script>
+    // Ajouter cet événement dans votre JavaScript
+    document.getElementById('check-ratings-btn').addEventListener('click', function() {
+        checkForCompletedRides();
+    });
+</script>
+
+
+
 
