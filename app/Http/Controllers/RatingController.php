@@ -86,4 +86,37 @@ class RatingController extends Controller
             ]
         ]);
     }
+
+
+    public function getDriverReviews($driverId)
+{
+    try {
+        $reviews = Rating::where('driver_id', $driverId)
+            ->with('passenger:id,name,profile_image_url')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $averageRating = $reviews->avg('rating');
+
+        return response()->json([
+            'success' => true,
+            'reviews' => $reviews->map(function($review) {
+                return [
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'created_at' => $review->created_at,
+                    'passenger_name' => $review->passenger->name,
+                    'passenger_image' => $review->passenger->profile_image_url
+                ];
+            }),
+            'average_rating' => $averageRating
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur lors de la récupération des avis'
+        ], 500);
+    }
+}
 }

@@ -22,6 +22,9 @@ use App\Http\Controllers\SmsController;
 // use App\Http\Controllers\RideCompletionController;
 use App\Http\Controllers\RatingController;
 
+Route::get('/driver/{id}/reviews', [App\Http\Controllers\RatingController::class, 'getDriverReviews'])
+    ->name('driver.reviews');
+
 // Route pour marquer une course comme terminée
 Route::post('/driver/ride-request/{id}/complete', [App\Http\Controllers\Driver\RideCompletionController::class, 'complete'])
     ->name('driver.ride.complete')

@@ -4,6 +4,46 @@
 @section('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
+
+.reviews-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.review-item {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 0;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.review-rating {
+    color: #ffc107;
+}
+
+.review-date {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.review-comment {
+    color: #4b5563;
+}
+
+.rating-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 500;
+}
 .rating-stars {
     display: flex;
     justify-content: center;
@@ -693,10 +733,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     ` : ''}
                 </div>
                 <div class="driver-footer">
-                    <div class="text-muted small">
-                        <i class="far fa-clock me-1"></i>
-                        Disponible depuis  ${new Date(announcement.created_at).toLocaleString()}
-                    </div>
+            <div class="text-muted small">
+                <i class="far fa-clock me-1"></i>
+                Disponible depuis ${new Date(announcement.created_at).toLocaleString()}
+            </div>
+            <div class="d-flex gap-2">
+                <button onclick="showReviews(${announcement.driver.id}, '${announcement.driver.name}', '${announcement.driver.profile_image_url}')"
+                    class="btn btn-outline-primary">
+                    <i class="fas fa-star me-2"></i>Avis
+                </button>
+                <button onclick="showBooking(${JSON.stringify(announcement).replace(/"/g, '&quot;')})"
+                    class="btn btn-primary">
+                    <i class="fas fa-car me-2"></i>Réserver
+                </button>
+            </div>
+        </div>
 
 
                     <button onclick="showBooking(${JSON.stringify(announcement).replace(/"/g, '&quot;')})"
@@ -1238,62 +1289,141 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Mettre à jour la liste des chauffeurs
-    function updateDriversList(announcements) {
-        const container = document.getElementById('drivers-list');
+//     function updateDriversList(announcements) {
+//         const container = document.getElementById('drivers-list');
 
-        if (announcements.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-car"></i>
-                    <h3>Aucun chauffeur disponible</h3>
-                    <p>Il n'y a pas de chauffeurs disponibles pour les critères sélectionnés.</p>
-                </div>
-            `;
-            return;
-        }
+//         if (announcements.length === 0) {
+//             container.innerHTML = `
+//                 <div class="empty-state">
+//                     <i class="fas fa-car"></i>
+//                     <h3>Aucun chauffeur disponible</h3>
+//                     <p>Il n'y a pas de chauffeurs disponibles pour les critères sélectionnés.</p>
+//                 </div>
+//             `;
+//             return;
+//         }
 
-        container.innerHTML = announcements.map(announcement => `
-            <div class="driver-card">
-                <div class="driver-header">
-                    <div class="driver-profile">
-                        <img src="${announcement.driver.profile_image_url}" alt="${announcement.driver.name}" class="driver-avatar">
-                        <div class="driver-info">
-                            <h3>${announcement.driver.name}</h3>
-                            <p><i class="fas fa-phone me-1"></i>${announcement.driver.phone}</p>
+//         container.innerHTML = announcements.map(announcement => `
+//             <div class="driver-card">
+//                 <div class="driver-header">
+//                     <div class="driver-profile">
+//                         <img src="${announcement.driver.profile_image_url}" alt="${announcement.driver.name}" class="driver-avatar">
+//                         <div class="driver-info">
+//                             <h3>${announcement.driver.name}</h3>
+//                             <p><i class="fas fa-phone me-1"></i>${announcement.driver.phone}</p>
+//                         </div>
+//                     </div>
+//                 </div>
+//                 <div class="driver-body">
+//                     <div class="location-info">
+//                         <div class="location-icon">
+//                             <i class="fas fa-map-marker-alt"></i>
+//                         </div>
+//                         <div class="location-details">
+//                             <div class="location-name">${announcement.location_name}</div>
+//                             <div class="text-muted">
+//                                 <i class="fas fa-map-pin me-1"></i>${announcement.city}, ${announcement.country}
+//                             </div>
+//                         </div>
+//                     </div>
+//                     ${announcement.note ? `
+//                         <div class="driver-note">
+//                             <i class="fas fa-info-circle me-2"></i>${announcement.note}
+//                         </div>
+//                     ` : ''}
+//                 </div>
+//                 <div class="driver-footer">
+//                     <div class="text-muted small">
+//                         <i class="far fa-clock me-1"></i>
+//                         Disponible depuis ${new Date(announcement.created_at).toLocaleString()}
+//                     </div>
+//                     <button onclick="showBooking(${JSON.stringify(announcement).replace(/"/g, '&quot;')})"
+//                         class="btn btn-primary">
+//                         <i class="fas fa-car me-2"></i>Réserver
+//                     </button>
+
+//                     <button onclick="showReviews(driverId)" class="btn btn-outline-primary">
+//     <i class="fas fa-star me-2"></i>Voir les avis
+// </button>
+//                 </div>
+//             </div>
+//         `).join('');
+//     }
+
+
+// Mettre à jour la liste des chauffeurs
+function updateDriversList(announcements) {
+  const container = document.getElementById("drivers-list")
+
+  if (announcements.length === 0) {
+    container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-car"></i>
+                <h3>Aucun chauffeur disponible</h3>
+                <p>Il n'y a pas de chauffeurs disponibles pour les critères sélectionnés.</p>
+            </div>
+        `
+    return
+  }
+
+  container.innerHTML = announcements
+    .map(
+      (announcement) => `
+        <div class="driver-card">
+            <div class="driver-header">
+                <div class="driver-profile">
+                    <img src="${announcement.driver.profile_image_url}" alt="${announcement.driver.name}" class="driver-avatar">
+                    <div class="driver-info">
+                        <h3>${announcement.driver.name}</h3>
+                        <p><i class="fas fa-phone me-1"></i>${announcement.driver.phone}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="driver-body">
+                <div class="location-info">
+                    <div class="location-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="location-details">
+                        <div class="location-name">${announcement.location_name}</div>
+                        <div class="text-muted">
+                            <i class="fas fa-map-pin me-1"></i>${announcement.city}, ${announcement.country}
                         </div>
                     </div>
                 </div>
-                <div class="driver-body">
-                    <div class="location-info">
-                        <div class="location-icon">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </div>
-                        <div class="location-details">
-                            <div class="location-name">${announcement.location_name}</div>
-                            <div class="text-muted">
-                                <i class="fas fa-map-pin me-1"></i>${announcement.city}, ${announcement.country}
-                            </div>
-                        </div>
+                ${
+                  announcement.note
+                    ? `
+                    <div class="driver-note">
+                        <i class="fas fa-info-circle me-2"></i>${announcement.note}
                     </div>
-                    ${announcement.note ? `
-                        <div class="driver-note">
-                            <i class="fas fa-info-circle me-2"></i>${announcement.note}
-                        </div>
-                    ` : ''}
+                `
+                    : ""
+                }
+            </div>
+            <div class="driver-footer">
+                <div class="text-muted small">
+                    <i class="far fa-clock me-1"></i>
+                    Disponible depuis ${new Date(announcement.created_at).toLocaleString()}
                 </div>
-                <div class="driver-footer">
-                    <div class="text-muted small">
-                        <i class="far fa-clock me-1"></i>
-                        Disponible depuis ${new Date(announcement.created_at).toLocaleString()}
-                    </div>
-                    <button onclick="showBooking(${JSON.stringify(announcement).replace(/"/g, '&quot;')})"
+                <div class="d-flex gap-2">
+                    <button onclick="showReviews(${announcement.driver.id}, '${announcement.driver.name}', '${announcement.driver.profile_image_url}')"
+                        class="btn btn-outline-primary">
+                        <i class="fas fa-star me-2"></i>Avis
+                    </button>
+                    <button onclick="showBooking(${JSON.stringify(announcement).replace(/"/g, "&quot;")})"
                         class="btn btn-primary">
                         <i class="fas fa-car me-2"></i>Réserver
                     </button>
                 </div>
             </div>
-        `).join('');
-    }
+        </div>
+    `,
+    )
+    .join("")
+}
+
+
 
     // Initialisation
     loadAvailableCountries();
@@ -1303,6 +1433,119 @@ document.addEventListener('DOMContentLoaded', function() {
     // Mise à jour automatique toutes les 30 secondes
     setInterval(applyFilters, 30000);
 });
+
+
+// Créer le popup pour la carte
+function createDriverPopup(announcement) {
+  return `
+        <div class="driver-popup">
+            <div class="d-flex align-items-center mb-2">
+                <img src="${announcement.driver.profile_image_url}"
+                    alt="${announcement.driver.name}"
+                    class="rounded-circle me-2"
+                    style="width: 40px; height: 40px; object-fit: cover;">
+                <div>
+                    <div class="fw-bold">${announcement.driver.name}</div>
+                    <div class="small text-muted">${announcement.driver.phone}</div>
+                </div>
+            </div>
+            <div class="small mb-2">${announcement.location_name}</div>
+            <div class="d-flex gap-2">
+                <button onclick="showReviews(${announcement.driver.id}, '${announcement.driver.name}', '${announcement.driver.profile_image_url}')"
+                    class="btn btn-outline-primary btn-sm w-50">
+                    <i class="fas fa-star me-1"></i>Avis
+                </button>
+                <button onclick="showBooking(${JSON.stringify(announcement).replace(/"/g, "&quot;")})"
+                    class="btn btn-primary btn-sm w-50">
+                    <i class="fas fa-car me-1"></i>Réserver
+                </button>
+            </div>
+        </div>
+    `
+}
+
+
+
+// Initialiser le modal des avis
+const reviewsModal = new bootstrap.Modal(document.getElementById('reviewsModal'));
+
+
+
+// Fonction pour afficher les avis
+window.showReviews = async function(driverId, driverName, driverImage) {
+    try {
+        // Mettre à jour les informations du chauffeur dans le modal
+        document.getElementById('reviewDriverName').textContent = driverName;
+        document.getElementById('reviewDriverImage').src = driverImage || '/images/default-avatar.png';
+
+        // Afficher le modal pendant le chargement
+        reviewsModal.show();
+
+        // Afficher un indicateur de chargement
+        document.getElementById('reviewsList').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des avis...</p>
+            </div>
+        `;
+
+        // Charger les avis
+        const response = await fetch(`/driver/${driverId}/reviews`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Erreur lors du chargement des avis');
+        }
+
+        // Mettre à jour la note moyenne
+        document.getElementById('reviewDriverRating').textContent =
+            data.average_rating ? data.average_rating.toFixed(1) : '0.0';
+        document.getElementById('reviewCount').textContent =
+            `(${data.reviews.length} avis)`;
+
+        // Afficher les avis
+        if (data.reviews.length === 0) {
+            document.getElementById('reviewsList').innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-comment-slash fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">Aucun avis pour le moment</p>
+                </div>
+            `;
+            return;
+        }
+
+        document.getElementById('reviewsList').innerHTML = data.reviews.map(review => `
+            <div class="review-item">
+                <div class="review-header">
+                    <div class="review-rating">
+                        ${Array(5).fill(0).map((_, i) => `
+                            <i class="fa${i < review.rating ? 's' : 'r'} fa-star"></i>
+                        `).join('')}
+                    </div>
+                    <div class="review-date">
+                        ${new Date(review.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+                ${review.comment ? `
+                    <div class="review-comment">
+                        ${review.comment}
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('reviewsList').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                ${error.message}
+            </div>
+        `;
+    }
+}
 </script>
 @endsection
 
@@ -1352,6 +1595,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="btn btn-primary" id="submitRating" disabled>
                     Soumettre l'évaluation
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{--  --}}
+
+
+<!-- Modal des avis -->
+<div class="modal fade" id="reviewsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Avis sur le chauffeur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="driver-profile mb-4">
+                    <img id="reviewDriverImage" src="/images/default-avatar.png" alt="" class="driver-avatar">
+                    <div class="driver-info">
+                        <h3 id="reviewDriverName"></h3>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rating-display">
+                                <i class="fas fa-star text-warning"></i>
+                                <span id="reviewDriverRating">0.0</span>
+                            </div>
+                            <span class="text-muted" id="reviewCount">(0 avis)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="reviewsList" class="reviews-list">
+                    <!-- Les avis seront injectés ici -->
+                </div>
             </div>
         </div>
     </div>

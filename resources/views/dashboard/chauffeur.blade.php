@@ -1723,8 +1723,12 @@ async function loadRides() {
             });
     }
 });
+
+
 </script>
 @endsection
+
+
 <!-- Ajouter ce bouton quelque part dans votre interface passager -->
 <button id="check-ratings-btn" class="btn btn-sm btn-outline-primary">
     <i class="fas fa-star me-2"></i>Vérifier les courses à évaluer
@@ -1736,6 +1740,9 @@ async function loadRides() {
         checkForCompletedRides();
     });
 </script>
+
+
+
 
 
 
