@@ -21,7 +21,14 @@ use App\Http\Controllers\SmsController;
 // Ancien code (incorrect)
 // use App\Http\Controllers\RideCompletionController;
 use App\Http\Controllers\RatingController;
+// use App\Http\Controllers\Auth\LoginController;
 
+Route::get('login/google', [LoginController::class, 'redirectToGoogle'])->name('login.google');
+Route::get('login/google/callback', [LoginController::class, 'handleGoogleCallback']);
+
+// Routes pour Google
+Route::get('login/google', [LoginController::class, 'redirectToGoogle'])->name('login.google');
+Route::get('login/google/callback', [LoginController::class, 'handleGoogleCallback']);
 Route::get('/driver/{id}/reviews', [App\Http\Controllers\RatingController::class, 'getDriverReviews'])
     ->name('driver.reviews');
 
@@ -208,3 +215,7 @@ Route::post('/sms', [SmsController::class, 'sendSms'])->name('sms.send');
 Route::post('/passenger/submit-rating', [RatingController::class, 'store'])->middleware('auth');
 Route::get('/passenger/check-completed-rides', [RatingController::class, 'checkCompletedRides'])->middleware('auth');
 
+
+Auth::routes();
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

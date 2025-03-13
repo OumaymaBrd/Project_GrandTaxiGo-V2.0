@@ -9,17 +9,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class User extends \TCG\Voyager\Models\User
 {
     use Notifiable;
-//
+
     protected $fillable = [
         'name',
-        //
-        //
         'email',
         'password',
         'role',
         'phone',
-        'profile_image_url',
+        'profile_image',
         'connection_code',
+        'google_id', // Ajouté
     ];
 
     protected $hidden = [
@@ -60,4 +59,3 @@ class User extends \TCG\Voyager\Models\User
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
     }
 }
-

@@ -3,51 +3,78 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Exception;
 
 class LoginController extends Controller
 {
-    public function showLoginForm()
+    use AuthenticatesUsers;
+
+    /**
+     * Where to redirect users after login.
+     *
+     * @var string
+     */
+    protected $redirectTo = '/home';
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
     {
-        return view('auth.login');
+        $this->middleware('guest')->except('logout');
+        $this->middleware('auth')->only('logout');
     }
 
-    public function login(Request $request)
+    /**
+     * Redirect the user to the Google authentication page.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function redirectToGoogle()
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
-
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-
-            // Marquer comme première visite
-            session(['first_visit' => true]);
-
-            return redirect()->intended(route('dashboard'))
-                ->with('success', 'Connexion réussie!');
+        try {
+            return Socialite::driver('google')->redirect();
+        } catch (Exception $e) {
+            return redirect()->route('login')
+                ->with('error', 'Erreur de connexion avec Google : ' . $e->getMessage());
         }
-
-        return back()
-            ->withInput($request->only('email', 'remember'))
-            ->withErrors([
-                'email' => 'Les identifiants fournis ne correspondent pas à nos enregistrements.',
-            ]);
     }
 
-
-
-    public function logout(Request $request)
+    /**
+     * Handle Google authentication callback.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function handleGoogleCallback()
     {
-        Auth::logout();
+        try {
+            $googleUser = Socialite::driver('google')->user();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+            $user = User::where('email', $googleUser->email)->first();
 
-        return redirect()->route('login')
-            ->with('success', 'Déconnexion réussie!');
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'google_id' => $googleUser->id,
+                    'password' => bcrypt(rand(1, 10000)),
+                    'role' => 'passager'
+                ]);
+            }
+
+            Auth::login($user);
+
+            return redirect()->intended('dashboard');
+
+        } catch (Exception $e) {
+            return redirect()->route('login')
+                ->with('error', 'Erreur de connexion avec Google : ' . $e->getMessage());
+        }
     }
 }
-
